@@ -5,6 +5,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +25,6 @@ import kotlinx.coroutines.delay
 @Composable
 fun AlbumScreen(viewModel: AlbumViewModel = viewModel()) {
 
-    val albums = viewModel.albums
     val mediaItems = viewModel.mediaItems
 
     LaunchedEffect(Unit) {
@@ -55,28 +55,42 @@ fun AlbumScreen(viewModel: AlbumViewModel = viewModel()) {
                 targetState = currentItem,
                 transitionSpec = {
                     fadeIn(tween(3000)) togetherWith fadeOut(tween(3000))
-                }
+                },
+                label = ""
             ) { item ->
 
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data("${item.baseUrl}?w=1920&h=1080")
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data("${item.baseUrl}?w=1920&h=1080")
+                            .crossfade(true)
+                            .allowHardware(false)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    // EXIF日付
+                    item.mediaMetadata?.creationTime?.let { rawDate ->
+
+                        val formattedDate = formatExifDate(rawDate)
+
+                        Text(
+                            text = formattedDate,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(24.dp)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            color = Color.White,
+                            fontSize = 20.sp
+                        )
+                    }
+                }
             }
-            Text(
-                text = "${albums.first().title} (${albums.first().mediaItemsCount})",
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .padding(8.dp),
-                color = Color.White
-            )
         }
 
     } else {
@@ -112,4 +126,15 @@ fun LoadingText() {
         fontSize = 28.sp,
         fontFamily = FontFamily.Monospace
     )
+}
+
+fun formatExifDate(raw: String?): String {
+    if (raw == null) return ""
+
+    return try {
+        val datePart = raw.substring(0, 10) // YYYY-MM-DD
+        datePart.replace("-", "/")
+    } catch (e: Exception) {
+        ""
+    }
 }
