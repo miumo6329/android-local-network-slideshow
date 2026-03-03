@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.android_local_network_slideshow.data.AlbumViewModel
 import coil.compose.AsyncImage
@@ -85,10 +86,30 @@ fun AlbumScreen(viewModel: AlbumViewModel = viewModel()) {
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "Loading...",
-                fontSize = 24.sp,
-                color = Color.White)
+            LoadingText()
         }
     }
+}
+
+@Composable
+fun LoadingText() {
+
+    var dotCount by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(500)
+            dotCount = (dotCount + 1) % 4
+        }
+    }
+
+    val dots = ".".repeat(dotCount)
+    val paddedDots = dots.padEnd(3, ' ')
+
+    Text(
+        text = "Loading$paddedDots",
+        color = Color.White,
+        fontSize = 28.sp,
+        fontFamily = FontFamily.Monospace
+    )
 }
