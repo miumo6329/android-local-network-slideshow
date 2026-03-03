@@ -9,6 +9,8 @@ import androidx.compose.runtime.*
 
 class AlbumViewModel : ViewModel() {
 
+    private val api = ApiClient.api
+
     var albums by mutableStateOf<List<Album>>(emptyList())
         private set
 
@@ -17,13 +19,22 @@ class AlbumViewModel : ViewModel() {
 
     fun loadAlbums() {
         viewModelScope.launch {
-            albums = ApiClient.api.getAlbums().albums
+            albums = api.getAlbums().albums
+
+            if (albums.isNotEmpty()) {
+                loadMediaItems(albums.first().id)
+            }
         }
     }
 
     fun loadMediaItems(albumId: String) {
         viewModelScope.launch {
-            mediaItems = ApiClient.api.getMediaItems(albumId).mediaItems
+            try {
+                val response = api.getMediaItems(albumId)
+                mediaItems = response.mediaItems.shuffled()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
