@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.android_local_network_slideshow.data.AlbumViewModel
@@ -48,7 +49,8 @@ fun AlbumScreen(viewModel: AlbumViewModel = viewModel()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
         ) {
             // フェードして画像切替
             AnimatedContent(
@@ -59,35 +61,61 @@ fun AlbumScreen(viewModel: AlbumViewModel = viewModel()) {
                 label = ""
             ) { item ->
 
-                Box(
-                    modifier = Modifier.fillMaxSize()
+                // 画面のサイズ(maxWidth, maxHeight)を取得するためのBox
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
+                    val imageWidth = item.mediaMetadata?.width?.toFloat() ?: 1920f
+                    val imageHeight = item.mediaMetadata?.height?.toFloat() ?: 1080f
+                    val safeImageHeight = if (imageHeight > 0f) imageHeight else 1080f
 
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data("${item.baseUrl}?w=1920&h=1080")
-                            .crossfade(true)
-                            .allowHardware(false)
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
+                    val imageRatio = imageWidth / safeImageHeight
+                    val parentRatio = this.maxWidth.value / this.maxHeight.value
 
-                    // EXIF日付
-                    item.mediaMetadata?.creationTime?.let { rawDate ->
+                    val targetWidth: androidx.compose.ui.unit.Dp
+                    val targetHeight: androidx.compose.ui.unit.Dp
 
-                        val formattedDate = formatExifDate(rawDate)
+                    if (imageRatio > parentRatio) {
+                        targetWidth = this.maxWidth
+                        targetHeight = this.maxWidth / imageRatio
+                    } else {
+                        targetHeight = this.maxHeight
+                        targetWidth = this.maxHeight * imageRatio
+                    }
 
-                        Text(
-                            text = formattedDate,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(24.dp)
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            color = Color.White,
-                            fontSize = 20.sp
+                    Box(
+                        modifier = Modifier.size(targetWidth, targetHeight)
+                    ) {
+
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data("${item.baseUrl}?w=1920&h=1080")
+                                .crossfade(true)
+                                .allowHardware(false)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
                         )
+
+                        // EXIF日付
+                        item.mediaMetadata?.creationTime?.let { rawDate ->
+
+                            val formattedDate = formatExifDate(rawDate)
+
+                            Text(
+                                text = formattedDate,
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(12.dp)
+                                    .padding(horizontal = 12.dp),
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
                     }
                 }
             }
